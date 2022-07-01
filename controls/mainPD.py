@@ -1,13 +1,17 @@
 import rospy
-from PID import PD
+from PD import PD
 
 
 def main():
     rospy.init_node('Control_node')
     controller = PD()
     while not rospy.is_shutdown():
-        if controller.current_state_ != None and controller.x_pos != None and controller.velocity != None:
+        print("Juniors kuch kaam nahi kar rahe")
+        if controller.current_state != None and controller.velocity != None:
+            # print("Agar yeh run hua, sablog ko mai nikal raha hai")
             controller.runPD()
+        else:
+            print(controller.current_state)
 
 if __name__ == '__main__':
     try:

@@ -8,7 +8,7 @@ def main():
     rospy.init_node('Control_node')
     controller = PD()
     while not rospy.is_shutdown():
-        if controller.current_state_ != None and controller.x_pos != None and controller.velocity != None:
+        if controller.current_state != None and controller.x_pos != None and controller.velocity != None:
             t2 = time.time()
             if t2 - t1 == 5:
                 controller.runPD(0)

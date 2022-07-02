@@ -76,9 +76,12 @@ class PD():
         
     def calc_crossTrackError(self):
         nearest_waypoint_index = self.calc_nearestWaypoint()
-        nearestx_diff = abs(self.x_pos[nearest_waypoint_index] - self.currState.x)
-        nearesty_diff = abs(self.y_pos[nearest_waypoint_index] - self.currState.y)
-        return np.hypot(nearestx_diff, nearesty_diff)
+        nearestx_diff = (self.x_pos[nearest_waypoint_index] - self.currState.x)
+        nearesty_diff = (self.y_pos[nearest_waypoint_index] - self.currState.y) 
+        if nearestx_diff > 0:
+            return np.hypot(nearestx_diff, nearesty_diff)
+        else:
+            return -1 * np.hypot(nearestx_diff, nearesty_diff)
     
     def calc_steeringAngle(self):
         ep = self.calc_crossTrackError()
@@ -108,7 +111,6 @@ class PD():
         else:
             a = (a / 24)
         return a
-
 
     def runPD(self):
         self.currState = State(self.current_state.pose.pose.position.x, self.current_state.pose.pose.position.y, self.convertPiToPi(euler_from_quaternion([self.current_state.pose.pose.orientation.x, self.current_state.pose.pose.orientation.y, self.current_state.pose.pose.orientation.z, self.current_state.pose.pose.orientation.w])[2]), self.velocity)

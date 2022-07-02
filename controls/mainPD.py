@@ -1,6 +1,6 @@
 import rospy
 import time
-from PID import PD
+from PD import PD
 
 t1 = time.time()
 

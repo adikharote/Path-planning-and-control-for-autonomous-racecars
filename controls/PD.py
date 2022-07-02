@@ -10,6 +10,7 @@ from tf.transformations import euler_from_quaternion
 import matplotlib.pyplot as plt
 import time 
 
+TARGET_SPEED = 3
 class State:
     def __init__(self, x=0.0, y=0.0, yaw=0.0, v=0.0):
         self.x = x
@@ -65,6 +66,8 @@ class PD():
         rospy.loginfo('Publish to topics')
         self.control_command_publisher = rospy.Publisher('/fsds/control_command', ControlCommand, queue_size=1)
 
+# LATERAL CONTROL
+
     def calc_nearestWaypoint(self):
         x_diff = abs(self.x_pos - self.currState.x)
         y_diff = abs(self.y_pos - self.currState.y)
@@ -93,7 +96,23 @@ class PD():
     def convertPiToPi(self, angle):
         return (angle + np.pi) % (2 * np.pi) - np.pi
 
-    def runPD(self, acceleration):
+#LONGITUDINAL CONTROL
+
+    def proportionalControl(self, target, current):
+        a = self.Kp * (target - current)
+        vel = 0
+        if (a < 0):
+            a = 0
+        elif (a >= 1):
+            a = 1
+        else:
+            a = (a / 24)
+        return a
+
+
+    def runPD(self):
         self.currState = State(self.current_state.pose.pose.position.x, self.current_state.pose.pose.position.y, self.convertPiToPi(euler_from_quaternion([self.current_state.pose.pose.orientation.x, self.current_state.pose.pose.orientation.y, self.current_state.pose.pose.orientation.z, self.current_state.pose.pose.orientation.w])[2]), self.velocity)
         self.steer = self.calc_steeringAngle()
-        self.publishControlCommands(self.steer, acceleration)
+        self.target_speed = TARGET_SPEED
+        vel = self.proportionalControl(self.target_speed, self.velocity)
+        self.publishControlCommands(self.steer, vel)

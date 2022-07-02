@@ -8,6 +8,7 @@ from geometry_msgs.msg import TwistStamped
 import numpy as np
 from tf.transformations import euler_from_quaternion
 import matplotlib.pyplot as plt
+import time 
 
 class State:
     def __init__(self, x=0.0, y=0.0, yaw=0.0, v=0.0):
@@ -18,7 +19,6 @@ class State:
         self.WB = 1.5
 
 class PD():
-
     def __init__(self):
          self.initializeSubscribers()
          self.initialisePublisher()
@@ -93,8 +93,7 @@ class PD():
     def convertPiToPi(self, angle):
         return (angle + np.pi) % (2 * np.pi) - np.pi
 
-    def runPD(self):
+    def runPD(self, acceleration):
         self.currState = State(self.current_state.pose.pose.position.x, self.current_state.pose.pose.position.y, self.convertPiToPi(euler_from_quaternion([self.current_state.pose.pose.orientation.x, self.current_state.pose.pose.orientation.y, self.current_state.pose.pose.orientation.z, self.current_state.pose.pose.orientation.w])[2]), self.velocity)
-        vel = 5
         self.steer = self.calc_steeringAngle()
-        self.publishControlCommands(self.steer, vel)
+        self.publishControlCommands(self.steer, acceleration)

@@ -10,7 +10,7 @@ from tf.transformations import euler_from_quaternion
 import matplotlib.pyplot as plt
 import time 
 
-TARGET_SPEED = 3
+
 class State:
     def __init__(self, x=0.0, y=0.0, yaw=0.0, v=0.0):
         self.x = x
@@ -24,13 +24,17 @@ class PD():
          self.initializeSubscribers()
          self.initialisePublisher()
          self.waypoints_list = []
-         self.Kp = 2
-         self.Kd = 2
+         self.Kp = 1
+         self.Kd = 5
          self.current_state = None
-         self.x_pos = None
+         self.x_pos = []
+         self.y_pos = []
          self.velocity = None
          self.steering_angle = 0
          self.previous_ep = 0
+         self.t1 = time.time()
+         self.maxway = 0
+         self.TARGET_SPEED = 3.5
 
     def initializeSubscribers(self):
         rospy.loginfo('Subscribe to topics')
@@ -48,11 +52,9 @@ class PD():
 
         self.x_pos = np.array(self.x_pos1)
         self.y_pos = np.array(self.y_pos1)
-        print("Waypoints _______________")
 
     def slam_state_callback(self, state):
         self.current_state = state   
-        print("State *************")
 
     def velocity_estimate_callback(self, velocity_):
 
@@ -60,7 +62,6 @@ class PD():
         vy = velocity_.twist.linear.y
         yaw = euler_from_quaternion([self.current_state.pose.pose.orientation.x, self.current_state.pose.pose.orientation.y, self.current_state.pose.pose.orientation.z, self.current_state.pose.pose.orientation.w])[2]
         self.velocity = abs((vx * np.cos(yaw) + vy * np.sin(yaw)))
-        print("vel ho gaya")
 
     def initialisePublisher(self):
         rospy.loginfo('Publish to topics')
@@ -69,13 +70,20 @@ class PD():
 # LATERAL CONTROL
 
     def calc_nearestWaypoint(self):
-        x_diff = abs(self.x_pos - self.currState.x)
-        y_diff = abs(self.y_pos - self.currState.y)
-        dist = np.sqrt( (x_diff ** 2) + (y_diff **2) )
-        return np.argmin(dist)
+        if self.x_pos != [] and self.y_pos != []:
+            x_diff = abs(self.x_pos - self.currState.x)
+            y_diff = abs(self.y_pos - self.currState.y)
+            dist = np.sqrt( (x_diff ** 2) + (y_diff **2) )
+            return np.argmin(dist)
+        else:
+            return 0
         
     def calc_crossTrackError(self):
         nearest_waypoint_index = self.calc_nearestWaypoint()
+        if time.time() - self.t1 > 20:
+            if nearest_waypoint_index > self.maxway:
+                self.maxway = nearest_waypoint_index
+            nearest_waypoint_index = self.maxway
         nearestx_diff = (self.x_pos[nearest_waypoint_index] - self.currState.x)
         nearesty_diff = (self.y_pos[nearest_waypoint_index] - self.currState.y) 
         if nearestx_diff > 0:
@@ -85,9 +93,26 @@ class PD():
     
     def calc_steeringAngle(self):
         ep = self.calc_crossTrackError()
+        if ep < 0:
+            ep += 1
+        if ep > 0:
+            ep -= 1
         ed = (ep - self.previous_ep)
-        steering_angle = (self.Kp * ep) + (self.Kd * ed) 
         self.previous_ep = ep
+        if time.time() - self.t1 < 25:
+            steering_angle = (0.5 * ep) + (3 * ed)
+        else:
+            if ep > 0.8:
+                ep = -1
+                self.TARGET_SPEED = 1.5
+            else:
+                self.TARGET_SPEED = 3.5
+
+            if ep < -1.5:
+                self.TARGET_SPEED = 1.5
+                ep = 0.4
+            steering_angle = (self.Kp * ep) + (self.Kd * ed)
+        print('ep', ep, 'steering_angle', steering_angle)
         return steering_angle
 
     def publishControlCommands(self, steer, vel):
@@ -102,19 +127,19 @@ class PD():
 #LONGITUDINAL CONTROL
 
     def proportionalControl(self, target, current):
-        a = self.Kp * (target - current)
+        a = (target - current)
         vel = 0
         if (a < 0):
             a = 0
-        elif (a >= 1):
-            a = 1
+        elif a >= 3:
+            a = 0.2
         else:
-            a = (a / 24)
+            a = (a / 48)
         return a
 
     def runPD(self):
         self.currState = State(self.current_state.pose.pose.position.x, self.current_state.pose.pose.position.y, self.convertPiToPi(euler_from_quaternion([self.current_state.pose.pose.orientation.x, self.current_state.pose.pose.orientation.y, self.current_state.pose.pose.orientation.z, self.current_state.pose.pose.orientation.w])[2]), self.velocity)
         self.steer = self.calc_steeringAngle()
-        self.target_speed = TARGET_SPEED
+        self.target_speed = self.TARGET_SPEED
         vel = self.proportionalControl(self.target_speed, self.velocity)
         self.publishControlCommands(self.steer, vel)

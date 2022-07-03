@@ -1,0 +1,15 @@
+# slam_map_topic_name: /ekf_slam_output
+slam_map_topic_name: /fsds/testing_only/track
+slam_state_topic_name: /fsds/testing_only/odom
+waypoints_topic_name: /mapping/waypoints
+
+track_algorithm: "center-line"
+node_rate: 10   # [Herz]
+
+########################################
+######## Possible ALgorithms ###########
+########################################
+# center-line
+# RRT
+# Voronoi 
+# Dijkstra

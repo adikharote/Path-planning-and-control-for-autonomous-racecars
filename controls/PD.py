@@ -80,10 +80,6 @@ class PD():
         
     def calc_crossTrackError(self):
         nearest_waypoint_index = self.calc_nearestWaypoint()
-        if time.time() - self.t1 > 20:
-            if nearest_waypoint_index > self.maxway:
-                self.maxway = nearest_waypoint_index
-            nearest_waypoint_index = self.maxway
         nearestx_diff = (self.x_pos[nearest_waypoint_index] - self.currState.x)
         nearesty_diff = (self.y_pos[nearest_waypoint_index] - self.currState.y) 
         if nearestx_diff > 0:
@@ -93,26 +89,26 @@ class PD():
     
     def calc_steeringAngle(self):
         ep = self.calc_crossTrackError()
-        if ep < 0:
-            ep += 1
-        if ep > 0:
-            ep -= 1
+        #if ep < 0:
+        #    ep += 1
+        #if ep > 0:
+        #   ep -= 1
         ed = (ep - self.previous_ep)
         self.previous_ep = ep
-        if time.time() - self.t1 < 25:
-            steering_angle = (0.5 * ep) + (3 * ed)
-        else:
-            if ep > 0.8:
-                ep = -1
-                self.TARGET_SPEED = 1.5
-            else:
-                self.TARGET_SPEED = 3.5
+        #if time.time() - self.t1 < 25:
+        #    steering_angle = (0.5 * ep) + (3 * ed)
+        #else:
+        #    if ep > 0.8:
+        #        ep = -1
+        #        self.TARGET_SPEED = 1.5
+        #    else:
+        #       self.TARGET_SPEED = 3.5
 
-            if ep < -1.5:
-                self.TARGET_SPEED = 1.5
-                ep = 0.4
-            steering_angle = (self.Kp * ep) + (self.Kd * ed)
-        print('ep', ep, 'steering_angle', steering_angle)
+        #    if ep < -1.5:
+        #        self.TARGET_SPEED = 1.5
+        #        ep = 0.4
+        steering_angle = (self.Kp * ep) + (self.Kd * ed)
+        #print('ep', ep, 'steering_angle', steering_angle)
         return steering_angle
 
     def publishControlCommands(self, steer, vel):

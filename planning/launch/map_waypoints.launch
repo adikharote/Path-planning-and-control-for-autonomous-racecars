@@ -1,0 +1,5 @@
+<launch>
+    <node name="Planning_node" pkg="planning" type="main.py" output="screen">
+        <rosparam command="load" file="$(find planning)/config/map_waypoints.yaml" /> <!--Load parameters from config files-->
+    </node>
+</launch>

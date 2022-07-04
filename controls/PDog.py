@@ -1,5 +1,3 @@
-from re import search
-from socket import timeout
 import rospy
 from fs_msgs.msg import ControlCommand
 from fsd_common_msgs.msg import WaypointsStamped
@@ -122,3 +120,10 @@ class PD():
         self.target_speed = TARGET_SPEED
         vel = self.proportionalControl(self.target_speed, self.velocity)
         self.publishControlCommands(self.steer, vel)
+        self.plot(self.x_pos, self.y_pos)
+
+    def plot(self, x_pos, y_pos):
+        plt.cla()
+        plt.plot(x_pos, y_pos, "ro", label="course")
+        plt.plot(self.currState.x, self.currState.y, "bo", label="trajectory")
+        plt.pause(0.001)

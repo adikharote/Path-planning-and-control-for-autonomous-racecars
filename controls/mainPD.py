@@ -1,6 +1,6 @@
 import rospy
 import time
-from PD import PD
+from PDog import PD
 
 def main():
     rospy.init_node('Control_node')

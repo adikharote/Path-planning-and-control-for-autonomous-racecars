@@ -8,7 +8,7 @@ from tf.transformations import euler_from_quaternion
 import matplotlib.pyplot as plt
 import time 
 
-TARGET_SPEED = 2
+TARGET_SPEED = 3.5
 class State:
     def __init__(self, x=0.0, y=0.0, yaw=0.0, v=0.0):
         self.x = x
@@ -23,6 +23,7 @@ class PD():
          self.initialisePublisher()
          self.waypoints_list = []
          self.Kp = 1
+         self.k = 1
          self.Kd = 15
          self.current_state = None
          self.x_pos = []
@@ -47,11 +48,9 @@ class PD():
 
         self.x_pos = np.array(self.x_pos1)
         self.y_pos = np.array(self.y_pos1)
-        print("Waypoints _____")
 
     def slam_state_callback(self, state):
         self.current_state = state   
-        print("State *****")
 
     def velocity_estimate_callback(self, velocity_):
 
@@ -59,7 +58,6 @@ class PD():
         vy = velocity_.twist.linear.y
         yaw = euler_from_quaternion([self.current_state.pose.pose.orientation.x, self.current_state.pose.pose.orientation.y, self.current_state.pose.pose.orientation.z, self.current_state.pose.pose.orientation.w])[2]
         self.velocity = abs((vx * np.cos(yaw) + vy * np.sin(yaw)))
-        print("vel ho gaya")
 
     def initialisePublisher(self):
         rospy.loginfo('Publish to topics')
@@ -88,7 +86,10 @@ class PD():
     def calc_steeringAngle(self):
         ep = self.calc_crossTrackError()
         ed = (ep - self.previous_ep)
-        steering_angle = (self.Kp * ep) + (self.Kd * ed) 
+        steering_angle = (self.Kp * ep) + (self.Kd * ed)
+        print(ep)
+        # if ep < -4:
+        #     ep = 1
         self.previous_ep = ep
         return steering_angle
 
@@ -104,7 +105,7 @@ class PD():
 #LONGITUDINAL CONTROL
 
     def proportionalControl(self, target, current):
-        a = self.Kp * (target - current)
+        a = self.k * (target - current)
         vel = 0
         if (a < 0):
             a = 0
